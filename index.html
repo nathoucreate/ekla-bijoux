@@ -311,8 +311,10 @@
 
     .product-info { padding: 0 0.2rem; }
     .product-name { font-family: var(--font-display); font-size: 1.15rem; font-weight: 400; color: var(--charcoal); margin-bottom: 0.25rem; }
-    .product-subtitle { font-size: 0.72rem; color: var(--text-light); font-weight: 300; margin-bottom: 0.5rem; letter-spacing: 0.04em; }
+    .product-subtitle { font-size: 0.72rem; color: var(--text-light); font-weight: 300; margin-bottom: 0.4rem; letter-spacing: 0.04em; }
+    .product-short-desc { display: none; font-size: 0.75rem; color: var(--text-light); font-weight: 300; margin-bottom: 0.5rem; line-height: 1.5; }
     .product-price { font-family: var(--font-display); font-size: 1.05rem; font-weight: 500; color: var(--charcoal); }
+    @media (max-width: 768px) { .product-short-desc { display: block; } }
 
     /* Product image placeholders (colored gradients, used when images not loaded) */
     .ph-img { width: 100%; height: 100%; position: relative; }
@@ -717,8 +719,9 @@
     @keyframes ripple { to { transform: scale(4); opacity: 0; } }
     @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-    /* ===== CUSTOM CURSOR ===== */
-    * { cursor: none !important; }
+    /* ===== CUSTOM CURSOR (desktop only) ===== */
+    @media (pointer: fine) { * { cursor: none !important; } }
+    @media (pointer: coarse) { .cursor-dot, .cursor-ring { display: none !important; } }
     .cursor-dot {
       width: 8px; height: 8px; background: var(--gold); border-radius: 50%;
       position: fixed; pointer-events: none; z-index: 99999;
@@ -789,17 +792,30 @@
     @media (max-width: 768px) {
       .nav-links { display: none; }
       .hamburger { display: flex; }
+      .nav-logo img { height: 68px !important; }
       .process-steps { grid-template-columns: 1fr; }
       .footer-grid { grid-template-columns: 1fr; }
       .newsletter-form { flex-direction: column; }
       .newsletter-form input { border-right: 1px solid rgba(201,169,110,0.3); border-bottom: none; }
       .insta-grid { grid-template-columns: repeat(2, 1fr); }
       .histoire-img-pair { grid-template-columns: 1fr; }
+      /* Fiche produit mobile — colonne unique centrée */
+      .product-modal-content { grid-template-columns: 1fr !important; width: 96vw !important; max-height: 92vh; overflow-y: auto; }
+      .product-modal-img { min-height: 260px !important; max-height: 40vh; }
+      .product-modal-info { padding: 1.8rem 1.5rem !important; align-items: center; text-align: center; }
+      .pm-desc { font-size: 0.85rem; }
+      .pm-actions { flex-direction: column; gap: 0.6rem; width: 100%; }
+      .btn-add-cart { width: 100%; padding: 1rem; font-size: 0.8rem; }
+      .btn-fav { width: 100%; height: 46px; }
+      /* Cart mobile */
+      .cart-sidebar { width: 100vw; }
     }
     @media (max-width: 520px) {
-      h1 { font-size: 2.5rem; }
+      h1 { font-size: 2.2rem; }
       .hero-ctas { flex-direction: column; }
-      .boutique-grid .product-card, .products-grid .product-card { flex: 0 1 calc(50% - 1rem); min-width: 140px; max-width: 100%; }
+      .boutique-grid .product-card, .products-grid .product-card { flex: 0 1 calc(50% - 0.75rem); min-width: 130px; max-width: 100%; }
+      .nav { padding: 0 1rem; }
+      nav { padding: 0 1rem; }
     }
   </style>
 </head>
@@ -1335,11 +1351,24 @@
     </div>
   </div>
   <div class="cart-footer" id="cartFooter" style="display:none">
+    <div id="cartShippingBar" style="margin-bottom:1rem;padding:0.75rem 1rem;background:var(--cream-mid);font-size:0.75rem;text-align:center;color:var(--text);border-left:2px solid var(--gold)"></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;font-size:0.8rem;color:var(--text-light)">
+      <span>Sous-total</span>
+      <span id="cartSubtotal">0 €</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:1rem;font-size:0.8rem;color:var(--text-light)">
+      <span>Livraison</span>
+      <span id="cartShipping">5,90 €</span>
+    </div>
     <div class="cart-total">
-      <span>Total</span>
+      <span>Total TTC</span>
       <span class="cart-total-amount" id="cartTotalAmount">0 €</span>
     </div>
-    <button class="btn-checkout" onclick="showToast('Redirection vers le paiement sécurisé…')">Commander</button>
+    <button class="btn-checkout" onclick="checkout()">
+      <span>Commander</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-left:0.5rem"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+    <p style="text-align:center;font-size:0.68rem;color:var(--text-light);margin-top:0.75rem">🔒 Paiement sécurisé — Livraison Colissimo</p>
   </div>
 </div>
 
@@ -1466,6 +1495,7 @@ function productCardHTML(p) {
       <div class="product-info">
         <div class="product-name">${p.name}</div>
         <div class="product-subtitle">${p.sub}</div>
+        <div class="product-short-desc">${p.desc.substring(0,80)}…</div>
         <div class="product-price">${p.price} €${p.rupture ? ' <span style="font-size:0.7rem;color:var(--text-light);font-family:var(--font-body);letter-spacing:0.1em;text-decoration:none;font-weight:400">— Épuisé</span>' : ''}</div>
       </div>
     </div>`;
@@ -1569,8 +1599,17 @@ function renderCartItems() {
   }
   empty.style.display = 'none';
   footer.style.display = 'block';
-  const total = cart.reduce((s, x) => s + x.price * x.qty, 0);
-  document.getElementById('cartTotalAmount').textContent = total + ' €';
+  const subtotal = cart.reduce((s, x) => s + x.price * x.qty, 0);
+  const shipping = subtotal >= 80 ? 0 : 5.90;
+  const total = subtotal + shipping;
+  document.getElementById('cartSubtotal').textContent = subtotal.toFixed(2).replace('.',',') + ' €';
+  document.getElementById('cartShipping').textContent = shipping === 0 ? 'Offerte 🎉' : shipping.toFixed(2).replace('.',',') + ' €';
+  document.getElementById('cartTotalAmount').textContent = total.toFixed(2).replace('.',',') + ' €';
+  const remaining = 80 - subtotal;
+  const bar = document.getElementById('cartShippingBar');
+  bar.innerHTML = subtotal >= 80
+    ? '🎉 <strong>Livraison offerte</strong> — merci pour votre commande !'
+    : `Plus que <strong>${remaining.toFixed(2).replace('.',',')} €</strong> pour la livraison offerte`;
   container.innerHTML = cart.map(item => `
     <div class="cart-item">
       <div class="cart-item-img">
@@ -1660,6 +1699,14 @@ function showToast(msg) {
 // ===== CGV =====
 function showCGV() {
   showToast('CGV disponibles en téléchargement — section en cours de construction');
+}
+
+// ===== CHECKOUT =====
+function checkout() {
+  if (cart.length === 0) return;
+  closeCart();
+  openAuth();
+  showToast('Connectez-vous pour finaliser votre commande');
 }
 
 // ===== SCROLL REVEAL =====
